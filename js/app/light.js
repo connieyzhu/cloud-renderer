@@ -24,8 +24,8 @@ class Light extends Box {
      * @param {Shader} shader The shader that will be used to render the light gizmo in the scene
      * @param {vec3} box_scale A scale to skew the vertices in the Box class to generate differently shaped lights
      */
-    constructor(id, color, intensity, target_shader, gl, shader, box_scale = [1,1,1]) {
-        super( gl, shader, box_scale )
+    constructor(id, color, intensity, target_shader, gl, shader, box_scale = [1, 1, 1]) {
+        super(gl, shader, box_scale)
 
         this.id = id
         this.color = color
@@ -39,7 +39,7 @@ class Light extends Box {
      * The target shader is the shader in which the light information will be used (i.e., Goraud, Phong, etc)
      * 
      */
-    setTargetShader( shader ) {
+    setTargetShader(shader) {
         this.target_shader = shader
     }
 
@@ -48,8 +48,7 @@ class Light extends Box {
      * Children can override this.
      *
      */
-    udpate( )
-    {
+    update() {
         return
     }
 
@@ -60,12 +59,12 @@ class Light extends Box {
      * 
      * @param {WebGL2RenderingContext} gl The WebGl2 rendering context 
      */
-    render( gl ) {
-        this.shader.use( )
+    render(gl) {
+        this.shader.use()
         this.shader.setUniform3f('u_color', this.color)
-        this.shader.unuse( )
+        this.shader.unuse()
 
-        super.render( gl )
+        super.render(gl)
     }
 }
 
@@ -93,7 +92,7 @@ class AmbientLight extends Light {
      * Updates the shader uniforms for this light
      * Access the correct light in the shader's light array by using this.id
      */
-    update( ) {
+    update() {
         this.target_shader.use()
         this.target_shader.setUniform3f(`u_lights_ambient[${this.id}].color`, this.color)
         this.target_shader.setUniform1f(`u_lights_ambient[${this.id}].intensity`, this.intensity)
@@ -128,9 +127,9 @@ class DirectionalLight extends Light {
      * 
      * Use the light's this.model_matrix to find the direction
      */
-    update( ) {
+    update() {
         let transform = mat4.getRotation(mat4.create(), this.model_matrix)
-        let direction = vec3.transformQuat(vec3.create(), [0.0,-1.0,0.0], transform)
+        let direction = vec3.transformQuat(vec3.create(), [0.0, -1.0, 0.0], transform)
 
         this.target_shader.use()
         this.target_shader.setUniform3f(`u_lights_directional[${this.id}].direction`, direction)
@@ -167,7 +166,7 @@ class PointLight extends Light {
      * 
      * Use this light's this.model_matrix to find its position
      */
-    update( ) {
+    update() {
         let position = mat4.getTranslation(vec3.create(), this.model_matrix)
 
         this.target_shader.use()

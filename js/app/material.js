@@ -21,7 +21,7 @@ class Material {
      * @param {Texture} map_nS Optional roughness texture for this material
      * @param {Texture} map_norm Optional normal texture for this material
      */
-    constructor( kA = [0,0,0], kD = [0,0,0], kS = [0,0,0], shininess = 1.0, map_kD = null, map_nS = null, map_norm ) {
+    constructor(kA = [0, 0, 0], kD = [0, 0, 0], kS = [0, 0, 0], shininess = 1.0, map_kD = null, map_nS = null, map_norm) {
         this.kA = kA
         this.kD = kD
         this.kS = kS

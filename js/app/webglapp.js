@@ -2,6 +2,7 @@
 
 import { hex2rgb, deg2rad, loadExternalFile } from '../utils/utils.js'
 import Box from './box3d.js'
+import Volume from '../../volume.js'
 import Input from '../input/input.js'
 import * as mat4 from '../lib/glmatrix/mat4.js'
 import * as vec3 from '../lib/glmatrix/vec3.js'
@@ -16,8 +17,7 @@ import { Scene, SceneNode } from './scene.js'
  * 
  * This class will use the Shapes that you have implemented to store and render them
  */
-class WebGlApp 
-{
+class WebGlApp {
     /**
      * Initializes the app with a box, and the model, view, and projection matrices
      * 
@@ -25,19 +25,21 @@ class WebGlApp
      * @param {Map<String,Shader>} shader The shaders to be used to draw the object
      * @param {AppState} app_state The state of the UI
      */
-    constructor( gl, shaders, app_state )
-    {
+    constructor(gl, shaders, app_state) {
         // Set GL flags
-        this.setGlFlags( gl )
+        this.setGlFlags(gl)
 
         // Store the shader(s)
         this.shaders = shaders // Collection of all shaders
         this.box_shader = this.shaders[0]
+        this.volume_shader = this.shaders[1]
         this.light_shader = this.shaders[this.shaders.length - 1]
-        this.active_shader = 1
-        
+        this.active_shader = 2
+
         // Create a box instance and create a variable to track its rotation
-        this.box = new Box( gl, this.box_shader )
+        this.box = new Box(gl, this.box_shader)
+        this.volume = new Volume(gl, this.volume_shader)
+        this.volume.setDrawMode(gl.TRIANGLES)
         this.animation_step = 0
 
         // Declare a variable to hold a Scene
@@ -52,19 +54,19 @@ class WebGlApp
         })
 
         // Create the view matrix
-        this.eye     =   [2.0, 0.5, -2.0]
-        this.center  =   [0, 0, 0]
-       
-        this.forward =   null
-        this.right   =   null
-        this.up      =   null
+        this.eye = [2.0, 0.5, -2.0]
+        this.center = [0, 0, 0]
+
+        this.forward = null
+        this.right = null
+        this.up = null
         // Forward, Right, and Up are initialized based on Eye and Center
         this.updateViewSpaceVectors()
         this.view = mat4.lookAt(mat4.create(), this.eye, this.center, this.up)
 
         // Create the projection matrix
         this.fovy = 60
-        this.aspect = 16/9
+        this.aspect = 16 / 9
         this.near = 0.001
         this.far = 1000.0
         this.projection = mat4.perspective(mat4.create(), deg2rad(this.fovy), this.aspect, this.near, this.far)
@@ -78,7 +80,7 @@ class WebGlApp
             shader.unuse()
         }
 
-    }  
+    }
 
     /**
      * Sets up GL flags
@@ -90,11 +92,9 @@ class WebGlApp
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    setGlFlags( gl ) {
-
+    setGlFlags(gl) {
         // Enable depth test
         gl.enable(gl.DEPTH_TEST)
-
     }
 
     /**
@@ -104,9 +104,8 @@ class WebGlApp
      * @param {Number} width 
      * @param {Number} height 
      */
-    setViewport( gl, width, height )
-    {
-        gl.viewport( 0, 0, width, height )
+    setViewport(gl, width, height) {
+        gl.viewport(0, 0, width, height)
     }
 
     /**
@@ -114,12 +113,11 @@ class WebGlApp
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    clearCanvas( gl )
-    {
+    clearCanvas(gl) {
         gl.clearColor(...hex2rgb('#000000'), 1.0)
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     }
-    
+
     /**
      * Updates components of this app
      * 
@@ -127,32 +125,31 @@ class WebGlApp
      * @param {AppState} app_state The state of the UI
      * @param {Number} delta_time The time in fractional seconds since the last frame
      */
-    update( gl, app_state, delta_time ) 
-    {
+    update(gl, app_state, delta_time) {
         // Shader
         if (this.scene != null) {
             let old_active_shader = this.active_shader
-            switch(app_state.getState('Shading')) {
+            switch (app_state.getState('Shading')) {
                 case 'Phong':
-                    this.active_shader = 1
+                    this.active_shader = 2
                     break
                 case 'Textured':
-                    this.active_shader = 2
+                    this.active_shader = 3
                     break
             }
             if (old_active_shader != this.active_shader) {
-                this.scene.resetLights( this.shaders[this.active_shader] )
+                this.scene.resetLights(this.shaders[this.active_shader])
                 for (let node of this.scene.getNodes()) {
                     if (node.type == 'model')
                         node.setShader(gl, this.shaders[this.active_shader])
-                    if (node.type == 'light') 
+                    if (node.type == 'light')
                         node.setTargetShader(this.shaders[this.active_shader])
                 }
             }
         }
 
         // Shader Debug
-        switch(app_state.getState('Shading Debug')) {
+        switch (app_state.getState('Shading Debug')) {
             case 'Normals':
                 this.shaders[this.active_shader].use()
                 this.shaders[this.active_shader].setUniform1i('u_show_normals', 1)
@@ -166,18 +163,18 @@ class WebGlApp
         }
 
         // Control
-        switch(app_state.getState('Control')) {
+        switch (app_state.getState('Control')) {
             case 'Camera':
-                this.updateCamera( delta_time )
+                this.updateCamera(delta_time)
                 break
             case 'Scene Node':
                 // Only do this if a scene is loaded
                 if (this.scene == null)
                     break
-                
+
                 // Get the currently selected scene node from the UI
-                let scene_node = this.scene.getNode( app_state.getState('Select Scene Node') )
-                this.updateSceneNode( scene_node, delta_time )
+                let scene_node = this.scene.getNode(app_state.getState('Select Scene Node'))
+                this.updateSceneNode(scene_node, delta_time)
                 break
         }
     }
@@ -186,9 +183,9 @@ class WebGlApp
      * Update the Forward, Right, and Up vector according to changes in the 
      * camera position (Eye) or the center of focus (Center)
      */
-     updateViewSpaceVectors( ) {
+    updateViewSpaceVectors() {
         this.forward = vec3.normalize(vec3.create(), vec3.sub(vec3.create(), this.eye, this.center))
-        this.right = vec3.normalize(vec3.create(), vec3.cross(vec3.create(), [0,1,0], this.forward))
+        this.right = vec3.normalize(vec3.create(), vec3.cross(vec3.create(), [0, 1, 0], this.forward))
         this.up = vec3.normalize(vec3.create(), vec3.cross(vec3.create(), this.forward, this.right))
     }
 
@@ -202,7 +199,7 @@ class WebGlApp
      * 
      * @param {Number} delta_time The time in seconds since the last frame (floating point number)
      */
-    updateCamera( delta_time ) {
+    updateCamera(delta_time) {
         let view_dirty = false
 
         // Control - Zoom
@@ -218,10 +215,10 @@ class WebGlApp
         // Control - Rotate
         if (Input.isMouseDown(0) && !Input.isKeyDown(' ')) {
             // Rotate around xz plane around y
-            this.eye = vec3.rotateY(vec3.create(), this.eye, this.center, deg2rad(-10 * Input.getMouseDx() * delta_time ))
-            
+            this.eye = vec3.rotateY(vec3.create(), this.eye, this.center, deg2rad(-10 * Input.getMouseDx() * delta_time))
+
             // Rotate around view-aligned rotation axis
-            let rotation = mat4.fromRotation(mat4.create(), deg2rad(-10 * Input.getMouseDy() * delta_time ), this.right)
+            let rotation = mat4.fromRotation(mat4.create(), deg2rad(-10 * Input.getMouseDy() * delta_time), this.right)
             this.eye = vec3.transformMat4(vec3.create(), this.eye, rotation)
 
             // Set dirty flag to trigger view matrix updates
@@ -231,7 +228,7 @@ class WebGlApp
         // Control - Pan
         if (Input.isMouseDown(1) || (Input.isMouseDown(0) && Input.isKeyDown(' '))) {
             // Create translation on two view-aligned axes
-            let translation = vec3.add(vec3.create(), 
+            let translation = vec3.add(vec3.create(),
                 vec3.scale(vec3.create(), this.right, -0.75 * Input.getMouseDx() * delta_time),
                 vec3.scale(vec3.create(), this.up, 0.75 * Input.getMouseDy() * delta_time)
             )
@@ -270,7 +267,7 @@ class WebGlApp
      * @param {SceneNode} node The SceneNode to manipulate
      * @param {Number} delta_time The time in seconds since the last frame (floating point number)
      */
-    updateSceneNode( node, delta_time ) {
+    updateSceneNode(node, delta_time) {
         let node_dirty = false
 
         let translation = mat4.create()
@@ -300,7 +297,7 @@ class WebGlApp
         if (Input.isMouseDown(1) || (Input.isMouseDown(0) && Input.isKeyDown(' '))) {
 
             translation = mat4.fromTranslation(mat4.create(),
-                vec3.add(vec3.create(), 
+                vec3.add(vec3.create(),
                     vec3.scale(vec3.create(), this.right, 0.75 * Input.getMouseDx() * delta_time),
                     vec3.scale(vec3.create(), this.up, -0.75 * Input.getMouseDy() * delta_time)
                 ))
@@ -339,7 +336,7 @@ class WebGlApp
             transformation = mat4.multiply(mat4.create(), transformation, translation)
             transformation = mat4.multiply(mat4.create(), transformation, rotation)
             // First, temporarily apply the full world rotation and scale to align the object in world space
-            transformation = mat4.multiply(mat4.create(), transformation, world_rotation_scale)        
+            transformation = mat4.multiply(mat4.create(), transformation, world_rotation_scale)
 
             // Update the node's transformation
             node.setTransformation(transformation)
@@ -354,21 +351,19 @@ class WebGlApp
      * @param {Number} canvas_width The canvas width. Needed to set the viewport
      * @param {Number} canvas_height The canvas height. Needed to set the viewport
      */
-    render( gl, canvas_width, canvas_height )
-    {
+    render(gl, canvas_width, canvas_height) {
         // Set viewport and clear canvas
-        this.setViewport( gl, canvas_width, canvas_height )
-        this.clearCanvas( gl )
+        this.setViewport(gl, canvas_width, canvas_height)
+        this.clearCanvas(gl)
 
         // Render the box
         // This will use the MVP that was passed to the shader
-        this.box.render( gl )
+        this.box.render(gl)
+        this.volume.renderVolume(gl)
 
         // Render the scene
-        if (this.scene) this.scene.render( gl )
-
+        if (this.scene) this.scene.render(gl)
     }
-
 }
 
 export default WebGlApp

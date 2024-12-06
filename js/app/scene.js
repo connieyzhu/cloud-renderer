@@ -40,7 +40,7 @@ class Scene {
         // Then load all the lights and reset the lights in the shader
         this.lights = 'lights' in scene_config ? this.loadLights(scene_config.lights) : {}
         this.light_counts = {}
-        this.resetLights( shader )
+        this.resetLights(shader)
 
         // Load the scenegraph recursively
         this.scenegraph = this.loadScenegraphNode(scene_config.scenegraph, gl, shader, light_shader)
@@ -56,21 +56,21 @@ class Scene {
      * 
      * @param {Shader} shader The shader to be used to draw objects
      */
-    resetLights( shader ) {
-        shader.use( )
-        for (let i = 0; i < SHADER_MAX_LIGHTS; i++ ) {
-            shader.setUniform3f(`u_lights_ambient[${i}].color`, [0,0,0])
+    resetLights(shader) {
+        shader.use()
+        for (let i = 0; i < SHADER_MAX_LIGHTS; i++) {
+            shader.setUniform3f(`u_lights_ambient[${i}].color`, [0, 0, 0])
             shader.setUniform1f(`u_lights_ambient[${i}].intensity`, 0.0)
 
-            shader.setUniform3f(`u_lights_directional[${i}].direction`, [0,0,0])
-            shader.setUniform3f(`u_lights_directional[${i}].color`, [0,0,0])
+            shader.setUniform3f(`u_lights_directional[${i}].direction`, [0, 0, 0])
+            shader.setUniform3f(`u_lights_directional[${i}].color`, [0, 0, 0])
             shader.setUniform1f(`u_lights_directional[${i}].intensity`, 0.0)
 
-            shader.setUniform3f(`u_lights_point[${i}].position`, [0,0,0])
-            shader.setUniform3f(`u_lights_point[${i}].color`, [0,0,0])
+            shader.setUniform3f(`u_lights_point[${i}].position`, [0, 0, 0])
+            shader.setUniform3f(`u_lights_point[${i}].color`, [0, 0, 0])
             shader.setUniform1f(`u_lights_point[${i}].intensity`, 0.0)
         }
-        shader.unuse( )
+        shader.unuse()
     }
 
     /**
@@ -80,7 +80,7 @@ class Scene {
      * @param {Object} models_config JSON object containing the list of models from the scene config
      * @returns {Map<String,[Array<Number>, Array<Number>]>} A dictionary containing the model data for each loaded OBJ file. Model data consists of a tuple of vertex and index values. Refer to OBJLoader for details.
      */
-    loadModels( models_config, gl ) {
+    loadModels(models_config, gl) {
         let models = {}
 
         for (let model_config of models_config) {
@@ -98,12 +98,12 @@ class Scene {
      * @param {Object} models_config JSON object containing the list of models from the scene config
      * @returns {Map<String,[Array<Number>, Array<Number>]>} A dictionary containing the model data for each loaded OBJ file. Model data consists of a tuple of vertex and index values. Refer to OBJLoader for details.
      */
-    loadLights( lights_config ) {
+    loadLights(lights_config) {
         let lights = {}
 
         for (let light_config of lights_config) {
             // Load the light
-            lights[light_config.name] = light_config            
+            lights[light_config.name] = light_config
         }
 
         return lights
@@ -117,15 +117,15 @@ class Scene {
      * @param {Shader} shader The shader to be used to draw the object
      * @returns {Object3D} An instance of Object3D containing the model geometry
      */
-    instantiateModel( name, gl, shader ) {
+    instantiateModel(name, gl, shader) {
         if (!(name in this.models))
             throw `Unable to find model "${name}" requested by scenengraph`
 
         // Retrieve the model geometry
-        let [ vertices, indices, material ] = this.models[name]
+        let [vertices, indices, material] = this.models[name]
 
         // Instantiate a new Object3D using the geometry and a default draw_mode of gl.TRIANGLES
-        return new ShadedObject3D( gl, shader, vertices, indices, gl.TRIANGLES, material )
+        return new ShadedObject3D(gl, shader, vertices, indices, gl.TRIANGLES, material)
     }
 
     /**
@@ -137,7 +137,7 @@ class Scene {
      * @param {Shader} light_shader The shader to be used to draw the object
      * @returns {Light} An instance of Light
      */
-    instantiateLight( name, gl, shader, light_shader ) {
+    instantiateLight(name, gl, shader, light_shader) {
         if (!(name in this.lights))
             throw `Unable to find light "${name}" requested by scenegraph`
 
@@ -152,16 +152,16 @@ class Scene {
         // Get light's color
         let color = light.color[0] == '#' ? hex2rgb(light.color) : light.color
 
-        switch(light.type) {
+        switch (light.type) {
             case 'ambient':
-                return new AmbientLight( this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader )
+                return new AmbientLight(this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader)
 
             case 'point':
-                return new PointLight( this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader )
+                return new PointLight(this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader)
 
             case 'directional':
-                return new DirectionalLight( this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader )
-            
+                return new DirectionalLight(this.light_counts[this.lights[name].type], color, light.intensity, shader, gl, light_shader)
+
             default:
                 throw `Unsupoorted light type "${light.type}" for light "${light.name}"`
         }
@@ -179,15 +179,15 @@ class Scene {
      * @param {Shader} light_shader The shader to be used to represent lights in the scene
      * @returns {SceneNode} The parsed SceneNode
      */
-    loadScenegraphNode( node_config, gl, shader, light_shader ) {
+    loadScenegraphNode(node_config, gl, shader, light_shader) {
         let node = null
 
         // Check the node's type
-        switch(node_config.type) {
+        switch (node_config.type) {
             case 'node': // Virtual node without geometry
                 node = new SceneNode(
-                    node_config.name, 
-                    node_config.type, 
+                    node_config.name,
+                    node_config.type,
                     'transformation' in node_config ? json2transform(node_config.transformation) : mat4.create()
                 )
                 break
@@ -232,8 +232,8 @@ class Scene {
      * 
      * @returns {Array<SceneNode>} All nodes in the graph
      */
-    getNodes( ) {
-        let nodes = this.scenegraph.getNodes( [] )
+    getNodes() {
+        let nodes = this.scenegraph.getNodes([])
         return nodes
     }
 
@@ -243,8 +243,8 @@ class Scene {
      * @param {String} name the name of the node to find
      * @returns {SceneNode | null} the SceneNode, if found
      */
-    getNode( name ) {
-        let node = this.scenegraph.getNode( name )
+    getNode(name) {
+        let node = this.scenegraph.getNode(name)
         if (node == null)
             throw `Node "${name}" not found in scenegraph`
         return node
@@ -255,8 +255,8 @@ class Scene {
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    render( gl ) {
-        this.scenegraph.render( gl )
+    render(gl) {
+        this.scenegraph.render(gl)
     }
 }
 
@@ -276,7 +276,7 @@ class SceneNode {
      * @param {String} type Type of the node ("node"|"model")
      * @param {mat4} transformation The local transformation of the node
      */
-    constructor( name, type, transformation ) {
+    constructor(name, type, transformation) {
         this.name = name
         this.type = type
         this.transformation = transformation
@@ -294,7 +294,7 @@ class SceneNode {
     getWorldTransformation() {
         return this.world_transformation
     }
-    
+
     /**
      * (Re-)calculates the compound world transformation of this node based on its and its parent's transformations
      * 
@@ -317,11 +317,11 @@ class SceneNode {
      * @param {Array<mat4>} transformations Temporary list of transformations of this node's branch in the scenegraph (used for recursion)
      * @returns {Array<mat4>} List of transformations of this node's branch in the scenegraph
      */
-    getTransformationHierarchy( transformations ) {
-        transformations.push( this.transformation )
+    getTransformationHierarchy(transformations) {
+        transformations.push(this.transformation)
         if (this.parent != null)
-            this.parent.getTransformationHierarchy( transformations )
-        
+            this.parent.getTransformationHierarchy(transformations)
+
         return transformations
     }
 
@@ -330,7 +330,7 @@ class SceneNode {
      * 
      * @returns {mat4} This node's local transformation
      */
-    getTransformation( ) {
+    getTransformation() {
         return this.transformation
     }
 
@@ -340,9 +340,9 @@ class SceneNode {
      * 
      * @param {mat4} transformation The node's new local transformation
      */
-    setTransformation( transformation ) {
+    setTransformation(transformation) {
         this.transformation = transformation
-        for (let child of this.children) 
+        for (let child of this.children)
             child.setTransformation(child.transformation)
         this.world_transformation = this.calculateWorldTransformation()
     }
@@ -352,7 +352,7 @@ class SceneNode {
      * 
      * @returns {SceneNode | null} The node's parent, if any
      */
-    getParent( ) {
+    getParent() {
         return this.parent
     }
 
@@ -361,7 +361,7 @@ class SceneNode {
      * 
      * @param {SceneNode} node The node's parent
      */
-    setParent( node ) {
+    setParent(node) {
         this.parent = node
     }
 
@@ -370,7 +370,7 @@ class SceneNode {
      * 
      * @param {SceneNode} node The child node to add
      */
-    addChild( node ) {
+    addChild(node) {
         this.children.push(node)
     }
 
@@ -380,10 +380,10 @@ class SceneNode {
      * @param {Array<SceneNode>} nodes Temporary list of nodes (used for recursion) 
      * @returns {Array<SceneNode>} A flat list of all nodes in this node's hierarchy
      */
-    getNodes( nodes ) {
+    getNodes(nodes) {
         nodes.push(this)
         for (let child of this.children)
-            child.getNodes( nodes )
+            child.getNodes(nodes)
         return nodes
     }
 
@@ -393,12 +393,12 @@ class SceneNode {
      * @param {String} name The name of the node to retrieve
      * @returns {SceneNode | null} The SceneNode, if any
      */
-    getNode( name ) {
+    getNode(name) {
         if (this.name == name)
             return this
-        
+
         for (let child of this.children) {
-            let node = child.getNode( name )
+            let node = child.getNode(name)
             if (node != null)
                 return node
         }
@@ -413,9 +413,9 @@ class SceneNode {
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    render( gl ) {
+    render(gl) {
         for (let child of this.children) {
-            child.render( gl )
+            child.render(gl)
         }
     }
 }
@@ -438,7 +438,7 @@ class ModelNode extends SceneNode {
      * @param {String} type Type of this node (always "model")
      * @param {mat4} transformation The local transformation of the node
      */
-    constructor( obj3d, name, type, transformation ) {
+    constructor(obj3d, name, type, transformation) {
         super(name, type, transformation)
 
         this.obj3d = obj3d
@@ -449,8 +449,8 @@ class ModelNode extends SceneNode {
      * 
      * @param {WebGL2RenderingContext.GL_TRIANGLES | WebGL2RenderingContext.GL_POINTS} draw_mode The draw mode to use.
      */
-    setDrawMode( draw_mode ) {
-        this.obj3d.setDrawMode( draw_mode )
+    setDrawMode(draw_mode) {
+        this.obj3d.setDrawMode(draw_mode)
     }
 
     /**
@@ -461,8 +461,8 @@ class ModelNode extends SceneNode {
      * 
      * @param {mat4} transformation The node's new local transformation
      */
-    setTransformation( transformation ) {
-        super.setTransformation( transformation )
+    setTransformation(transformation) {
+        super.setTransformation(transformation)
 
         this.obj3d.setTransformation(this.world_transformation)
     }
@@ -473,8 +473,8 @@ class ModelNode extends SceneNode {
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      * @param {Shader} shader The shader to be used to draw the object
      */
-    setShader( gl, shader ) {
-        this.obj3d.setShader( gl, shader )
+    setShader(gl, shader) {
+        this.obj3d.setShader(gl, shader)
     }
 
     /**
@@ -484,9 +484,9 @@ class ModelNode extends SceneNode {
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    render( gl ) {
-        this.obj3d.render( gl )
-        super.render( gl )
+    render(gl) {
+        this.obj3d.render(gl)
+        super.render(gl)
     }
 }
 
@@ -500,8 +500,8 @@ class ModelNode extends SceneNode {
  */
 class LightNode extends SceneNode {
 
-    constructor( light, name, type, transformation ) {
-        super( name, type, transformation )
+    constructor(light, name, type, transformation) {
+        super(name, type, transformation)
 
         this.light = light
     }
@@ -514,11 +514,11 @@ class LightNode extends SceneNode {
      * 
      * @param {mat4} transformation The node's new local transformation
      */
-    setTransformation( transformation ) {
-        super.setTransformation( transformation )
+    setTransformation(transformation) {
+        super.setTransformation(transformation)
 
         this.light.setTransformation(this.world_transformation)
-        this.light.update( )
+        this.light.update()
     }
 
     /**
@@ -526,9 +526,9 @@ class LightNode extends SceneNode {
      * 
      * @param {Shader} shader The shader to be used to draw the object
      */
-    setTargetShader( shader ) {
-        this.light.setTargetShader( shader )
-        this.light.update( )
+    setTargetShader(shader) {
+        this.light.setTargetShader(shader)
+        this.light.update()
     }
 
     /**
@@ -538,9 +538,9 @@ class LightNode extends SceneNode {
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      */
-    render( gl ) {
-        this.light.render( gl )
-        super.render( gl )
+    render(gl) {
+        this.light.render(gl)
+        super.render(gl)
     }
 }
 

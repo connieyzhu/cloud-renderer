@@ -9,8 +9,7 @@ class Box extends Object3D {
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      * @param {Shader} shader The shader to be used to draw the object
      */
-    constructor( gl, shader, box_scale = [1,1,1] ) 
-    {
+    constructor(gl, shader, box_scale = [1, 1, 1]) {
         let vertices = [
             1.000000, 1.000000, -1.000000,
             1.000000, -1.000000, -1.000000,
@@ -23,7 +22,7 @@ class Box extends Object3D {
         ]
 
         for (let i = 0; i < vertices.length; i++) {
-            vertices[i] = vertices[i] * box_scale[i%3]
+            vertices[i] = vertices[i] * box_scale[i % 3]
         }
 
         let indices = [
@@ -42,8 +41,8 @@ class Box extends Object3D {
             7, 6,
             6, 4
         ]
-        
-        super( gl, shader, vertices, indices, gl.LINES )
+
+        super(gl, shader, vertices, indices, gl.LINES)
     }
 
     /**
@@ -51,8 +50,7 @@ class Box extends Object3D {
      * Children can override this.
      * 
      */
-    udpate( ) 
-    {
+    update() {
         return
     }
 }

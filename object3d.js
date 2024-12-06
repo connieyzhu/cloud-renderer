@@ -139,7 +139,7 @@ class Object3D
      * Children can override this.
      * 
      */
-    udpate( ) 
+    update( ) 
     {
         return
     }
