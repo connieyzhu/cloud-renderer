@@ -46,7 +46,7 @@ uniform vec3 u_eye;
 
 // received from vertex stage
 in vec3 o_vertex_normal_world;
-in vec3 o_vertex_position_world;
+in vec4 o_vertex_position_world;
 
 // with webgl 2, we now have to define an out that will be the color of the fragment
 out vec4 o_fragColor;
@@ -121,9 +121,9 @@ void main() {
     // iterate over all possible lights and add their contribution
     for(int i = 0; i < MAX_LIGHTS; i++) {
         light_contribution += shadeAmbientLight(u_material, u_lights_ambient[i]);
-        light_contribution += shadeDirectionalLight(u_material, u_lights_directional[i], o_vertex_normal_world, u_eye, o_vertex_position_world);
-        light_contribution += shadePointLight(u_material, u_lights_point[i], o_vertex_normal_world, u_eye, o_vertex_position_world);
+        light_contribution += shadeDirectionalLight(u_material, u_lights_directional[i], o_vertex_normal_world, u_eye, o_vertex_position_world.xyz);
+        light_contribution += shadePointLight(u_material, u_lights_point[i], o_vertex_normal_world, u_eye, o_vertex_position_world.xyz);
     }
 
-    o_fragColor = vec4(light_contribution, 1.0);
+    o_fragColor = vec4(o_vertex_position_world.z / o_vertex_position_world.w * 0.5f + 0.5f);
 }

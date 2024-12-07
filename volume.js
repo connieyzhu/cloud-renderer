@@ -81,13 +81,11 @@ class Volume extends Object3D {
     }
 
     renderVolume(gl) {
-        gl.disable(gl.DEPTH_TEST);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
         this.render(gl);
 
-        gl.enable(gl.DEPTH_TEST);
         gl.disable(gl.BLEND);
     }
     

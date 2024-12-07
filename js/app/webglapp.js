@@ -79,7 +79,18 @@ class WebGlApp {
             shader.setUniform4x4f('u_p', this.projection)
             shader.unuse()
         }
+        
+        const canvas = document.getElementById('canvas');
+        this.framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
 
+        this.color_tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, this.color_tex);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.color_tex, 0);
+
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
 
     /**
@@ -359,10 +370,29 @@ class WebGlApp {
         // Render the box
         // This will use the MVP that was passed to the shader
         this.box.render(gl)
-        this.volume.renderVolume(gl)
 
         // Render the scene
-        if (this.scene) this.scene.render(gl)
+        gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+        this.volume.shader.use();
+        gl.activeTexture(gl.TEXTURE10);
+        gl.bindTexture(gl.TEXTURE_2D, this.color_tex);
+        this.volume.shader.setUniform1i("u_colorTexture", 10);
+
+        if (this.scene) this.scene.render(gl);
+        
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+        // this.volume.shader.use();
+        // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+        // gl.activeTexture(gl.TEXTURE4);
+        // gl.bindTexture(gl.TEXTURE_2D, this.color_texture);
+        // gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.color_texture, 0);
+
+        // this.volume.shader.setUniform1i("u_depthTexture", 4);
+        // this.volume.shader.unuse();
+
+        // render volume
+        this.volume.renderVolume(gl)
     }
 }
 

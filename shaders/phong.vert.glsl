@@ -11,7 +11,7 @@ uniform mat4x4 u_p;
 
 // output to fragment stage
 out vec3 o_vertex_normal_world;
-out vec3 o_vertex_position_world;
+out vec4 o_vertex_position_world;
 
 void main() {
 
@@ -25,6 +25,6 @@ void main() {
     gl_Position = u_p * u_v * vertex_position_world;
 
     o_vertex_normal_world = vertex_normal_world.xyz;
-    o_vertex_position_world = vertex_position_world.xyz;
+    o_vertex_position_world = vertex_position_world;
 
 }

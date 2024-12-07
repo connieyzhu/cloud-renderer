@@ -12,8 +12,7 @@ import Material from './js/app/material.js'
  * Base class for all drawable objects
  * 
  */
-class Object3D
-{
+class Object3D {
     /**
      * 
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
@@ -23,18 +22,17 @@ class Object3D
      * @param {WebGL2RenderingContext.GL_TRIANGLES | WebGL2RenderingContext.GL_POINTS} draw_mode The draw mode to use. In this assignment we use GL_TRIANGLES and GL_POINTS
      * @param {Material | null} material The material to render the object with
      */
-    constructor( gl, shader, vertices, indices, draw_mode, material = null )
-    {
+    constructor(gl, shader, vertices, indices, draw_mode, material = null) {
         this.shader = shader
         this.material = material
 
         this.vertices = vertices
         this.vertices_buffer = null
-        this.createVBO( gl )
+        this.createVBO(gl)
 
         this.indices = indices
         this.index_buffer = null
-        this.createIBO( gl )
+        this.createIBO(gl)
 
         this.draw_mode = draw_mode
 
@@ -42,7 +40,7 @@ class Object3D
         this.num_components_vec2 = 2
 
         this.vertex_array_object = null
-        this.createVAO( gl, shader )
+        this.createVAO(gl, shader)
 
         this.model_matrix = mat4.identity(mat4.create())
     }
@@ -53,10 +51,10 @@ class Object3D
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
      * @param {Shader} shader An instance of the shader to be used
      */
-    setShader( gl, shader ) {
+    setShader(gl, shader) {
         this.shader = shader
         gl.deleteVertexArray(this.vertex_array_object)
-        this.createVAO( gl, shader )
+        this.createVAO(gl, shader)
     }
 
     /**
@@ -64,7 +62,7 @@ class Object3D
      * 
      * @param {WebGL2RenderingContext.GL_TRIANGLES | WebGL2RenderingContext.GL_POINTS} draw_mode The draw mode to use. In this assignment we use GL_TRIANGLES and GL_POINTS
      */
-    setDrawMode( draw_mode ) {
+    setDrawMode(draw_mode) {
         this.draw_mode = draw_mode
     }
 
@@ -73,7 +71,7 @@ class Object3D
      * 
      * @param {mat4} transformation glmatrix matrix representing the matrix
      */
-    setTransformation( transformation ) {
+    setTransformation(transformation) {
         this.model_matrix = transformation
     }
 
@@ -83,29 +81,28 @@ class Object3D
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      * @param {Shader} shader The shader to be used to draw the object
      */
-    createVAO( gl, shader )
-    {
+    createVAO(gl, shader) {
         this.vertex_array_object = gl.createVertexArray();
         gl.bindVertexArray(this.vertex_array_object);
-        gl.bindBuffer( gl.ARRAY_BUFFER, this.vertices_buffer )
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertices_buffer)
 
-        let location = shader.getAttributeLocation( 'a_position' )
+        let location = shader.getAttributeLocation('a_position')
         let stride = 0, offset = 0
         if (location >= 0) {
-            gl.enableVertexAttribArray( location )
+            gl.enableVertexAttribArray(location)
             stride = 0, offset = 0
-            gl.vertexAttribPointer( location, this.num_components_vec3, gl.FLOAT, false, stride, offset )
+            gl.vertexAttribPointer(location, this.num_components_vec3, gl.FLOAT, false, stride, offset)
         }
 
-        location = shader.getAttributeLocation( 'a_normal' )
+        location = shader.getAttributeLocation('a_normal')
         if (location >= 0) {
-            gl.enableVertexAttribArray( location )
+            gl.enableVertexAttribArray(location)
             stride = 0, offset = (this.vertices.length / 2) * Float32Array.BYTES_PER_ELEMENT
-            gl.vertexAttribPointer( location, this.num_components_vec3, gl.FLOAT, false, stride, offset )
+            gl.vertexAttribPointer(location, this.num_components_vec3, gl.FLOAT, false, stride, offset)
         }
 
-        gl.bindVertexArray( null )
-        gl.bindBuffer( gl.ARRAY_BUFFER, null )
+        gl.bindVertexArray(null)
+        gl.bindBuffer(gl.ARRAY_BUFFER, null)
     }
 
     /**
@@ -113,12 +110,11 @@ class Object3D
      * 
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      */
-    createVBO( gl )
-    {
-        this.vertices_buffer = gl.createBuffer( );
-        gl.bindBuffer( gl.ARRAY_BUFFER, this.vertices_buffer )
-        gl.bufferData( gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW )
-        gl.bindBuffer( gl.ARRAY_BUFFER, null );
+    createVBO(gl) {
+        this.vertices_buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertices_buffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertices), gl.STATIC_DRAW)
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
     /**
@@ -126,12 +122,11 @@ class Object3D
      * 
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      */
-    createIBO( gl )
-    {
-        this.index_buffer = gl.createBuffer( );
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.index_buffer )
-        gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.indices), gl.STATIC_DRAW )
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null );
+    createIBO(gl) {
+        this.index_buffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.index_buffer)
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.indices), gl.STATIC_DRAW)
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
     }
 
     /**
@@ -139,8 +134,7 @@ class Object3D
      * Children can override this.
      * 
      */
-    update( ) 
-    {
+    update() {
         return
     }
 
@@ -149,28 +143,26 @@ class Object3D
      * 
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      */
-    render( gl )
-    {
+    render(gl) {
         // Bind vertex array object
-        gl.bindVertexArray( this.vertex_array_object )
+        gl.bindVertexArray(this.vertex_array_object)
 
         // Bind index buffer
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.index_buffer )
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.index_buffer)
 
         // Set up shader
-        this.shader.use( )
+        this.shader.use()
         this.shader.setUniform4x4f('u_m', this.model_matrix)
 
         // Draw the element
-        gl.drawElements( this.draw_mode, this.indices.length, gl.UNSIGNED_INT, 0 )
+        gl.drawElements(this.draw_mode, this.indices.length, gl.UNSIGNED_INT, 0)
 
         // Clean Up
-        gl.bindVertexArray( null )
-        gl.bindBuffer( gl.ARRAY_BUFFER, null )
-        gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, null )
-        this.shader.unuse( )
+        gl.bindVertexArray(null)
+        gl.bindBuffer(gl.ARRAY_BUFFER, null)
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null)
+        this.shader.unuse()
     }
-
 }
 
 /**
@@ -179,7 +171,7 @@ class Object3D
  * passed to the object's shader 
  * 
  */
-class ShadedObject3D extends Object3D { 
+class ShadedObject3D extends Object3D {
 
     /**
      * @param {WebGL2RenderingContext} gl The webgl2 rendering context
@@ -189,9 +181,9 @@ class ShadedObject3D extends Object3D {
      * @param {WebGL2RenderingContext.GL_TRIANGLES | WebGL2RenderingContext.GL_POINTS} draw_mode The draw mode to use. In this assignment we use GL_TRIANGLES and GL_POINTS
      * @param {Material} material The material to render the object with
      */
-     constructor( gl, shader, vertices, indices, draw_mode, material ) {
+    constructor(gl, shader, vertices, indices, draw_mode, material) {
         super(gl, shader, vertices, indices, draw_mode, material)
-     }
+    }
 
     /**
      * Sets up a vertex attribute object that is used during rendering to automatically tell WebGL how to access our buffers
@@ -199,13 +191,12 @@ class ShadedObject3D extends Object3D {
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      * @param {Shader} shader The shader to be used to draw the object
      */
-    createVAO( gl, shader )
-    {
+    createVAO(gl, shader) {
         // NOTE: There are now two versions of this.num_components -> this.num_components_vec3 and this.num_components_vec2 to accommodate texture coordinate data
 
         this.vertex_array_object = gl.createVertexArray();
         gl.bindVertexArray(this.vertex_array_object);
-        gl.bindBuffer( gl.ARRAY_BUFFER, this.vertices_buffer )
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.vertices_buffer)
 
         let stride = 0, offset = 0
 
@@ -215,35 +206,35 @@ class ShadedObject3D extends Object3D {
 
         stride = (this.vertices.length == 24) ? 0 : num_total_components * Float32Array.BYTES_PER_ELEMENT
 
-        let location = shader.getAttributeLocation( 'a_position' )
+        let location = shader.getAttributeLocation('a_position')
         if (location >= 0) {
             // TODO: Set up position attribute
             shader.setArrayBuffer('a_position', this.vertices_buffer, this.num_components_vec3, stride, offset)
         }
 
-        location = shader.getAttributeLocation( 'a_normal' )
+        location = shader.getAttributeLocation('a_normal')
         if (location >= 0) {
             // TODO: Set up normal attribute
             offset = this.num_components_vec3 * Float32Array.BYTES_PER_ELEMENT
             shader.setArrayBuffer('a_normal', this.vertices_buffer, this.num_components_vec3, stride, offset)
         }
 
-        location = shader.getAttributeLocation( 'a_tangent' )
+        location = shader.getAttributeLocation('a_tangent')
         if (location >= 0 && this.material.hasTexture()) {
             // TODO: Set up tangent attribute
             offset = (this.num_components_vec3 * 2) * Float32Array.BYTES_PER_ELEMENT
             shader.setArrayBuffer('a_tangent', this.vertices_buffer, this.num_components_vec3, stride, offset)
         }
 
-        location = shader.getAttributeLocation( 'a_texture_coord' )
+        location = shader.getAttributeLocation('a_texture_coord')
         if (location >= 0 && this.material.hasTexture()) {
             // TODO: Set up texture coordinate attribute
             offset = (this.num_components_vec3 * 3) * Float32Array.BYTES_PER_ELEMENT
             shader.setArrayBuffer('a_texture_coord', this.vertices_buffer, this.num_components_vec2, stride, offset)
         }
 
-        gl.bindVertexArray( null )
-        gl.bindBuffer( gl.ARRAY_BUFFER, null )
+        gl.bindVertexArray(null)
+        gl.bindBuffer(gl.ARRAY_BUFFER, null)
     }
 
     /**
@@ -253,10 +244,9 @@ class ShadedObject3D extends Object3D {
      * 
      * @param { WebGL2RenderingContext } gl The webgl2 rendering context
      */
-    render( gl )
-    {
+    render(gl) {
 
-        this.shader.use( )
+        this.shader.use()
 
         // TODO: Pass basic material properties (kA, kD, kS, shininess)
         this.shader.setUniform3f('u_material.kA', this.material.kA)
@@ -288,9 +278,9 @@ class ShadedObject3D extends Object3D {
             this.shader.setUniform1i('u_material.map_norm', 2)
         }
 
-        this.shader.unuse( )
+        this.shader.unuse()
 
-        super.render( gl )
+        super.render(gl)
     }
 }
 

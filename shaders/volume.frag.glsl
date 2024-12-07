@@ -4,11 +4,12 @@
 // to pick one. mediump is a good default. It means "medium precision".
 precision mediump float;
 
-#define STEP_SIZE 0.08
-#define STEP_COUNT 100
 #define EPSILON 0.001
 
 in vec4 v_worldSpaceCoord;
+in mat4x4 v_m;
+in mat4x4 v_v;
+in mat4x4 v_p;
 
 // with webgl 2, we now have to define an out that will be the color of the fragment
 out vec4 o_fragColor;
@@ -16,6 +17,10 @@ out vec4 o_fragColor;
 uniform vec3 u_eye;
 uniform vec3 u_lightPos;
 uniform uint u_frame;
+uniform float u_near;
+uniform float u_far;
+
+uniform sampler2D u_colorTexture;
 
 // https://www.shadertoy.com/view/4djSRW
 vec4 hash44(in vec4 p4) {
@@ -80,17 +85,14 @@ vec3 transfer(in float d) {
     return mix(vec3(0), vec3(1), d);
 }
 
-vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset) {
+vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset, in int stepCount, in float stepSize) {
     float depth = 0.0;
     vec4 color = vec4(0.0);
-    for (int i = 0; i < STEP_COUNT; ++i) {
+    for (int i = 0; i < stepCount; ++i) {
         vec3 p = ro + rd * depth;
         float d = density(p, offset);
-        float ld = density(p + normalize(p - l) * EPSILON, offset);
         if (d > 0.0) {
-            float dif = clamp((ld - d) / EPSILON, 0.0, 1.0);
             vec4 c = vec4(transfer(d), d);
-            c.rgb *= dif;
             c += vec4(0.2f, 0.2f, 0.2f, 0.0);
             c.rgb *= c.a; // treat density as alpha
             color += c * (1.0 - color.a);
@@ -100,9 +102,13 @@ vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset) {
                 break;
             }
         }
-        depth += STEP_SIZE;
+        depth += stepSize;
     }
     return clamp(color, 0.0, 1.0).rgb;
+}
+
+vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset) {
+    return march(ro, rd, l, offset, 200, 0.01);
 }
 
 vec3 march(in vec3 ro, in vec3 rd, in vec3 l) {
@@ -110,12 +116,14 @@ vec3 march(in vec3 ro, in vec3 rd, in vec3 l) {
 }
 
 void main() {
-    // fract(gl_FragCoord.w / STEP_SIZE - length(v_worldSpaceCoord.xyz - u_eye)) * STEP_SIZE;
-
-    vec3 vd = normalize(-u_eye);
     vec3 rd = normalize(v_worldSpaceCoord.xyz - u_eye);
     vec3 ro = v_worldSpaceCoord.xyz;
-    rd *= 1.0 / dot(rd, vd); // align samples with view
-    o_fragColor = vec4(march(ro, rd, u_lightPos, vec3(0.005, 0.001, 0) * float(u_frame)), 1.0);
+    // o_fragColor = vec4(march(ro, rd, vec3(0.0f, 1.0f, 0.0f), vec3(0.005, 0.001, 0) * float(u_frame)), 1.0);
+
+    vec4 sscoord4 = v_p * v_v * v_m * v_worldSpaceCoord;
+    vec3 sscoord = sscoord4.xyz / sscoord4.w;
+
     // o_fragColor = vec4(1.0f, 0.0f, 0.0f, 0.1f);
+    o_fragColor = vec4(texture(u_colorTexture, (sscoord * 0.5f + 0.5f).xy).a, 0.0f, 0.0f, 1.0f);
+    // o_fragColor = vec4(texture(u_colorTexture, (sscoord * 0.5f + 0.5f).xy).xyz, 1.0f);
 }
