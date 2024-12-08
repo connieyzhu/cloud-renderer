@@ -12,6 +12,7 @@ uniform mat4x4 u_p;
 // output to fragment stage
 out vec3 o_vertex_normal_world;
 out vec4 o_vertex_position_world;
+out mat4 v_v;
 
 void main() {
 
@@ -26,5 +27,5 @@ void main() {
 
     o_vertex_normal_world = vertex_normal_world.xyz;
     o_vertex_position_world = vertex_position_world;
-
+    v_v = u_v;
 }

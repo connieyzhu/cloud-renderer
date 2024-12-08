@@ -43,10 +43,13 @@ uniform Material u_material;
 
 // camera position
 uniform vec3 u_eye;
+uniform float u_near;
+uniform float u_far;
 
 // received from vertex stage
 in vec3 o_vertex_normal_world;
 in vec4 o_vertex_position_world;
+in mat4 v_v;
 
 // with webgl 2, we now have to define an out that will be the color of the fragment
 out vec4 o_fragColor;
@@ -108,7 +111,6 @@ vec3 shadePointLight(Material material, PointLight light, vec3 normal, vec3 eye,
 }
 
 void main() {
-
     // If we want to visualize only the normals, no further computations are needed
     if (u_show_normals) {
         o_fragColor = vec4(o_vertex_normal_world, 1.0);
@@ -125,5 +127,7 @@ void main() {
         light_contribution += shadePointLight(u_material, u_lights_point[i], o_vertex_normal_world, u_eye, o_vertex_position_world.xyz);
     }
 
-    o_fragColor = vec4(o_vertex_position_world.z / o_vertex_position_world.w * 0.5f + 0.5f);
+    vec4 view = v_v * o_vertex_position_world;
+    float viewDepth = (-view.z - u_near) / (u_far - u_near);
+    o_fragColor = vec4(light_contribution, viewDepth);
 }

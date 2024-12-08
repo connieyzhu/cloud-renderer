@@ -85,11 +85,20 @@ vec3 transfer(in float d) {
     return mix(vec3(0), vec3(1), d);
 }
 
-vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset, in int stepCount, in float stepSize) {
+vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset, in int stepCount, in float stepSize, in float maxDepth, in vec3 maxColor) {
     float depth = 0.0;
     vec4 color = vec4(0.0);
     for (int i = 0; i < stepCount; ++i) {
         vec3 p = ro + rd * depth;
+        if (-(v_v * vec4(p, 1.0f)).z >= maxDepth) {
+            vec4 c = vec4(maxColor, 1.0f);
+            color += c * (1.0 - color.a);
+        }
+        
+        if (color.a > 0.99) {
+            break;
+        }
+
         float d = density(p, offset);
         if (d > 0.0) {
             vec4 c = vec4(transfer(d), d);
@@ -102,28 +111,22 @@ vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset, in int stepCount, 
                 break;
             }
         }
+
         depth += stepSize;
     }
     return clamp(color, 0.0, 1.0).rgb;
 }
 
-vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset) {
-    return march(ro, rd, l, offset, 200, 0.01);
-}
-
-vec3 march(in vec3 ro, in vec3 rd, in vec3 l) {
-    return march(ro, rd, l, vec3(0.0));
-}
-
 void main() {
     vec3 rd = normalize(v_worldSpaceCoord.xyz - u_eye);
     vec3 ro = v_worldSpaceCoord.xyz;
-    // o_fragColor = vec4(march(ro, rd, vec3(0.0f, 1.0f, 0.0f), vec3(0.005, 0.001, 0) * float(u_frame)), 1.0);
 
     vec4 sscoord4 = v_p * v_v * v_m * v_worldSpaceCoord;
-    vec3 sscoord = sscoord4.xyz / sscoord4.w;
+    vec2 sscoord = (sscoord4.xy / sscoord4.w) * 0.5f + 0.5f;
+    vec4 background = texture(u_colorTexture, sscoord);
+    float viewDepth = background.a * (u_far - u_near) + u_near;
+    
+    vec3 marchColor = march(ro, rd, vec3(0.0f, 1.0f, 0.0f), vec3(0.005f, 0.001f, 0.0f) * float(u_frame), 200, 0.01, viewDepth, background.rgb);
 
-    // o_fragColor = vec4(1.0f, 0.0f, 0.0f, 0.1f);
-    o_fragColor = vec4(texture(u_colorTexture, (sscoord * 0.5f + 0.5f).xy).a, 0.0f, 0.0f, 1.0f);
-    // o_fragColor = vec4(texture(u_colorTexture, (sscoord * 0.5f + 0.5f).xy).xyz, 1.0f);
+    o_fragColor = vec4(marchColor, 1.0f);
 }
