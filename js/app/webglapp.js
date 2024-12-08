@@ -4,6 +4,7 @@ import { hex2rgb, deg2rad, loadExternalFile } from '../utils/utils.js'
 import Box from './box3d.js'
 import Volume from '../../volume.js'
 import Input from '../input/input.js'
+import PerlinNoise3D from '../lib/perlinnoise3d.js'
 import * as mat4 from '../lib/glmatrix/mat4.js'
 import * as vec3 from '../lib/glmatrix/vec3.js'
 import * as quat from '../lib/glmatrix/quat.js'
@@ -96,6 +97,24 @@ class WebGlApp {
         gl.bindRenderbuffer(gl.RENDERBUFFER, this.depth_buffer);
         gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
         gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depth_buffer);
+
+        const perlin = new PerlinNoise3D();
+        let noise_size = 32;
+        let noise_data = new Uint8Array(noise_size * noise_size * noise_size);
+        for (let k = 0; k < noise_size; ++k) {
+            for (let j = 0; j < noise_size; ++j) {
+                for (let i = 0; i < noise_size; ++i) {
+                    noise_data[i + j * noise_size + k * noise_size * noise_size] = perlin.noise([i, j, k]) * 256;
+                }
+            }
+        }
+        this.noise_tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_3D, this.noise_tex);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_BASE_LEVEL, 0);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAX_LEVEL, Math.log2(noise_size));
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texImage3D(gl.TEXTURE_3D, 0, gl.R8, noise_size, noise_size, noise_size, 0, gl.RED, gl.UNSIGNED_BYTE, noise_data);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
