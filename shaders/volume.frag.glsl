@@ -3,6 +3,7 @@
 // Fragment shaders don't have a default precision so we need
 // to pick one. mediump is a good default. It means "medium precision".
 precision mediump float;
+precision mediump sampler3D;
 
 #define EPSILON 0.001
 
@@ -21,6 +22,7 @@ uniform float u_near;
 uniform float u_far;
 
 uniform sampler2D u_colorTexture;
+uniform sampler3D u_noiseTexture;
 
 // https://www.shadertoy.com/view/4djSRW
 vec4 hash44(in vec4 p4) {
@@ -72,7 +74,7 @@ float density(in vec3 p, in vec3 offset) {
     if (outofbounds(p)) {
         return 0.0;
     }
-    return perlin3d(p + offset, 1.0, 1, 6, 0.5, 2.0);
+    //return perlin3d(p + offset, 1.0, 1, 6, 0.5, 2.0);
 }
 
 // temporary density sdf
@@ -125,6 +127,8 @@ void main() {
     vec2 sscoord = (sscoord4.xy / sscoord4.w) * 0.5f + 0.5f;
     vec4 background = texture(u_colorTexture, sscoord);
     float viewDepth = background.a * (u_far - u_near) + u_near;
+
+    vec4 noise = texture(u_noiseTexture, ro);
     
     vec3 marchColor = march(ro, rd, vec3(0.0f, 1.0f, 0.0f), vec3(0.005f, 0.001f, 0.0f) * float(u_frame), 200, 0.01, viewDepth, background.rgb);
 

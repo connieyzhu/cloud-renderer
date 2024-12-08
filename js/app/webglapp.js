@@ -110,11 +110,12 @@ class WebGlApp {
         }
         this.noise_tex = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_3D, this.noise_tex);
+        gl.texImage3D(gl.TEXTURE_3D, 0, gl.R8, noise_size, noise_size, noise_size, 0, gl.RED, gl.UNSIGNED_BYTE, noise_data);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_BASE_LEVEL, 0);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAX_LEVEL, Math.log2(noise_size));
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
         gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage3D(gl.TEXTURE_3D, 0, gl.R8, noise_size, noise_size, noise_size, 0, gl.RED, gl.UNSIGNED_BYTE, noise_data);
+        gl.generateMipmap(gl.TEXTURE_3D);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -405,6 +406,10 @@ class WebGlApp {
         gl.activeTexture(gl.TEXTURE10);
         gl.bindTexture(gl.TEXTURE_2D, this.color_tex);
         this.volume.shader.setUniform1i("u_colorTexture", 10);
+
+        gl.activeTexture(gl.TEXTURE11);
+        gl.bindTexture(gl.TEXTURE_3D, this.noise_tex);
+        this.volume.shader.setUniform1i("u_noiseTexture", 11);
 
         this.box.render(gl);
         if (this.scene) this.scene.render(gl);
