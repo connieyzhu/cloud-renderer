@@ -45,6 +45,8 @@ uniform Material u_material;
 
 // camera position in world space
 uniform vec3 u_eye;
+uniform float u_near;
+uniform float u_far;
 
 // with webgl 2, we now have to define an out that will be the color of the fragment
 out vec4 o_fragColor;
@@ -57,6 +59,7 @@ in vec3 v_tangent;
 in vec3 v_bitangent;
 in vec2 v_tex_coord;
 in mat3 v_tbn;
+in mat4 v_v;
 
 // Shades an ambient light and returns this light's contribution
 vec3 shadeAmbientLight(Material material, AmbientLight light) {
@@ -167,5 +170,7 @@ void main() {
         light_contribution += shadePointLight(u_material, u_lights_point[i], normal, u_eye, v_position);
     }
 
-    o_fragColor = vec4(light_contribution, 1.0);
+    vec4 view = v_v * vec4(v_position, 1.0f);
+    float viewDepth = (-view.z - u_near) / (u_far - u_near);
+    o_fragColor = vec4(light_contribution, viewDepth);
 }

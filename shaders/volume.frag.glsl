@@ -67,12 +67,20 @@ bool outofbounds(in vec3 p) {
     return p.x < -1.0 || p.x > 1.0 || p.y < -1.0 || p.y > 1.0 || p.z < -1.0 || p.z > 1.0;
 }
 
+float easeOutExpo(in float x) {
+    return clamp(1.0f - pow(2.0f, -30.0f * x), 0.0f, 1.0f);
+}
+
+float densityremap(in float d) {
+    return easeOutExpo(d) * 2.0f;
+}
+
 // temporary density sdf
 float density(in vec3 p, in vec3 offset) {
     if (outofbounds(p)) {
         return 0.0;
     }
-    return perlin3d(p + offset, 1.0, 1, 6, 0.5, 2.0);
+    return densityremap(perlin3d(p + offset, 1.0, 1, 6, 0.5, 2.0));
 }
 
 // temporary density sdf
@@ -81,40 +89,54 @@ float density(in vec3 p) {
 }
 
 // transfer function density -> color rgb
-vec3 transfer(in float d) {
-    return mix(vec3(0), vec3(1), d);
+vec3 transfer(in float x) {
+    x = easeOutExpo(x);
+    return mix(vec3(0), vec3(1), x);
 }
 
 vec3 march(in vec3 ro, in vec3 rd, in vec3 l, in vec3 offset, in int stepCount, in float stepSize, in float maxDepth, in vec3 maxColor) {
     float depth = 0.0;
-    vec4 color = vec4(0.0);
+    float cumTransmittance = 1.0f;
+    vec3 cumColor = vec3(0.0f);
     for (int i = 0; i < stepCount; ++i) {
+        bool terminate = false;
+
         vec3 p = ro + rd * depth;
-        if (-(v_v * vec4(p, 1.0f)).z >= maxDepth) {
-            vec4 c = vec4(maxColor, 1.0f);
-            color += c * (1.0 - color.a);
-        }
-        
-        if (color.a > 0.99) {
-            break;
-        }
-
         float d = density(p, offset);
-        if (d > 0.0) {
-            vec4 c = vec4(transfer(d), d);
-            c += vec4(0.2f, 0.2f, 0.2f, 0.0);
-            c.rgb *= c.a; // treat density as alpha
-            color += c * (1.0 - color.a);
 
-            // bounding box
-            if (outofbounds(p)) {
-                break;
-            }
+        float attenuation = exp(-d * stepSize);
+        vec3 color = transfer(d);
+        if (-(v_v * vec4(p, 1.0f)).z >= maxDepth) {
+            attenuation = 1.0f;
+            color = maxColor;
+            terminate = true;
         }
 
+        const float lStepSize = 0.1f;
+        const int lStepCount = 5;
+        float ldepth = 0.0f;
+        float lCumTransmittance = 1.0f;
+        for (int i = 0; i < lStepCount; ++i) {
+            vec3 lp = p + l * ldepth;
+            float ld = density(lp, offset);
+
+            float lAttenuation = exp(-ld * lStepSize);
+            if (outofbounds(lp)) lAttenuation = 1.0f;
+
+            lCumTransmittance *= lAttenuation;
+            ldepth += lStepSize;
+        }
+
+        cumColor += cumTransmittance * color * (1.0f - attenuation) * lCumTransmittance;
+        cumTransmittance *= attenuation;
         depth += stepSize;
+
+        if (outofbounds(p)) terminate = true;
+        if (cumTransmittance <= 0.01f) terminate = true;
+
+        if (terminate) break;
     }
-    return clamp(color, 0.0, 1.0).rgb;
+    return vec3(cumColor + cumTransmittance * maxColor);
 }
 
 void main() {
@@ -126,7 +148,7 @@ void main() {
     vec4 background = texture(u_colorTexture, sscoord);
     float viewDepth = background.a * (u_far - u_near) + u_near;
     
-    vec3 marchColor = march(ro, rd, vec3(0.0f, 1.0f, 0.0f), vec3(0.005f, 0.001f, 0.0f) * float(u_frame), 200, 0.01, viewDepth, background.rgb);
+    vec3 marchColor = march(ro, rd, normalize(vec3(1.0f, 1.0f, 0.0f)), vec3(0.005f, 0.001f, 0.0f) * float(u_frame), 200, 0.01, viewDepth, background.rgb);
 
     o_fragColor = vec4(marchColor, 1.0f);
 }
