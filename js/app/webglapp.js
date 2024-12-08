@@ -397,8 +397,6 @@ class WebGlApp {
         // This will use the MVP that was passed to the shader
 
         // Render the scene
-        gl.enable(gl.DEPTH_TEST);
-
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
         this.clearCanvas(gl);
 
@@ -419,17 +417,8 @@ class WebGlApp {
         this.box.render(gl);
         if (this.scene) this.scene.render(gl);
 
-        // this.volume.shader.use();
-        // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-        // gl.activeTexture(gl.TEXTURE4);
-        // gl.bindTexture(gl.TEXTURE_2D, this.color_texture);
-        // gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.color_texture, 0);
-
-        // this.volume.shader.setUniform1i("u_depthTexture", 4);
-        // this.volume.shader.unuse();
-
         // render volume
-        this.volume.renderVolume(gl)
+        this.volume.renderVolume(gl);
     }
 }
 

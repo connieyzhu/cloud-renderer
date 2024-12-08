@@ -19,6 +19,7 @@ out vec3 v_tangent;
 out vec3 v_bitangent;
 out vec2 v_tex_coord;
 out mat3 v_tbn;
+out mat4 v_v;
 
 void main() {
 
@@ -44,7 +45,7 @@ void main() {
     v_bitangent = bitangent_world;
     v_tex_coord = a_texture_coord;
     v_tbn = tbn;
+    v_v = u_v;
 
     gl_Position = u_p * u_v * vertex_position_world;
-
 }
