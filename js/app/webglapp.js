@@ -67,14 +67,16 @@ class WebGlApp {
         // Create the projection matrix
         this.fovy = 60
         this.aspect = 16 / 9
-        this.near = 0.001
-        this.far = 1000.0
+        this.near = 0.01
+        this.far = 10.0
         this.projection = mat4.perspective(mat4.create(), deg2rad(this.fovy), this.aspect, this.near, this.far)
 
         // Use the shader's setUniform4x4f function to pass the matrices
         for (let shader of this.shaders) {
             shader.use()
             shader.setUniform3f('u_eye', this.eye);
+            shader.setUniform1f('u_near', this.near);
+            shader.setUniform1f('u_far', this.far);
             shader.setUniform4x4f('u_v', this.view)
             shader.setUniform4x4f('u_p', this.projection)
             shader.unuse()
@@ -89,6 +91,11 @@ class WebGlApp {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.color_tex, 0);
+
+        this.depth_buffer = gl.createRenderbuffer();
+        gl.bindRenderbuffer(gl.RENDERBUFFER, this.depth_buffer);
+        gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, canvas.width, canvas.height);
+        gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, this.depth_buffer);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     }
@@ -364,23 +371,29 @@ class WebGlApp {
      */
     render(gl, canvas_width, canvas_height) {
         // Set viewport and clear canvas
-        this.setViewport(gl, canvas_width, canvas_height)
-        this.clearCanvas(gl)
-
+        this.setViewport(gl, canvas_width, canvas_height);
+        this.clearCanvas(gl);
         // Render the box
         // This will use the MVP that was passed to the shader
-        this.box.render(gl)
 
         // Render the scene
+        gl.enable(gl.DEPTH_TEST);
+
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+        this.clearCanvas(gl);
+
         this.volume.shader.use();
         gl.activeTexture(gl.TEXTURE10);
         gl.bindTexture(gl.TEXTURE_2D, this.color_tex);
         this.volume.shader.setUniform1i("u_colorTexture", 10);
 
+        this.box.render(gl);
         if (this.scene) this.scene.render(gl);
         
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        
+        this.box.render(gl);
+        if (this.scene) this.scene.render(gl);
 
         // this.volume.shader.use();
         // gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
